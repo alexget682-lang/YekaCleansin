@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeka Smart Cleansing App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background-color: #FFC0CB; /* Pink Background */
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .dark-card {
+            background-color: #2D2D2D; /* ጠቆር ያለ ከለር ለፅሁፍ ገፅ */
+            color: #FFC0CB;
+        }
+        .pink-border {
+            border: 3px solid #FF69B4;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div id="homePage" class="flex flex-col flex-grow">
+        <header class="p-6 text-center dark-card rounded-b-[40px] shadow-2xl">
+            <h1 class="text-2xl font-bold italic">Yeka Smart Cleansing</h1>
+            <p class="text-xs mt-1">የየካ ክፍለ ከተማ ጽዳት አስተዳደር</p>
+        </header>
+
+        <div class="flex flex-col items-center mt-8">
+            <div class="bg-white p-4 rounded-2xl shadow-xl pink-border">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WoredaRequest" alt="QR Code">
+            </div>
+            <p class="mt-2 font-bold text-gray-800">የወረዳዎች ጥያቄ ማቅረቢያ QR</p>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <div class="dark-card p-5 rounded-3xl shadow-lg">
+                <label class="block text-sm mb-2">የመግቢያ ኮድ ያስገቡ</label>
+                <input type="password" id="mainPass" class="w-full p-3 rounded-xl bg-gray-100 text-black border-none focus:ring-4 focus:ring-pink-400" placeholder="****">
+                <button onclick="checkLogin()" class="w-full mt-4 bg-[#FF69B4] text-white font-bold py-3 rounded-xl hover:bg-pink-600 transition">ግባ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dispatcherPage" class="hidden p-6">
+        <div class="dark-card p-4 rounded-2xl mb-4">
+            <h2 class="text-xl font-bold">የስምሪት ባለሙያ ገፅ</h2>
+            <p class="text-xs">የቀረቡ ጥያቄዎችን ይቀበሉ</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-md">
+            <p class="text-gray-600 italic">በአሁኑ ሰዓት አዲስ ጥያቄ የለም...</p>
+        </div>
+        <button onclick="logout()" class="mt-6 w-full py-2 bg-gray-800 text-white rounded-lg">ውጣ</button>
+    </div>
+
+    <div id="driverPage" class="hidden p-6">
+        <div class="dark-card p-4 rounded-2xl mb-4">
+            <h2 class="text-xl font-bold">የሹፌር መግቢያ</h2>
+        </div>
+        <div class="space-y-4">
+            <input type="number" id="wasteWeight" placeholder="የቆሻሻ ክብደት (በኪ.ግ)" class="w-full p-4 rounded-xl border-2 border-pink-400">
+            <button onclick="confirmCollection()" class="w-full py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg">አንስቻለሁ/አረጋግጥ</button>
+        </div>
+        <button onclick="logout()" class="mt-6 w-full py-2 bg-gray-800 text-white rounded-lg">ውጣ</button>
+    </div>
+
+    <div id="creatorPage" class="hidden p-6">
+        <div class="dark-card p-4 rounded-2xl mb-4 text-center">
+            <h2 class="text-xl font-bold uppercase">System Admin Panel</h2>
+            <p class="text-xs">Alex Getachew - Creator</p>
+        </div>
+        
+        <div class="bg-white p-4 rounded-2xl space-y-4 shadow-inner">
+            <h3 class="font-bold border-b pb-2">የይለፍ ቃል መቀየር</h3>
+            <div>
+                <label class="text-xs">ለስምሪት ባለሙያ</label>
+                <input type="text" id="newDisp" class="w-full p-2 border rounded" placeholder="1111">
+            </div>
+            <div>
+                <label class="text-xs">ለሹፌር</label>
+                <input type="text" id="newDriv" class="w-full p-2 border rounded" placeholder="2222">
+            </div>
+            <button onclick="alert('ኮድ ተቀይሯል!')" class="w-full bg-blue-600 text-white py-2 rounded">አዘምን</button>
+        </div>
+
+        <button onclick="downloadExcel()" class="w-full mt-4 bg-green-700 text-white py-4 rounded-xl font-bold shadow-lg">ሁሉንም ሪፖርት በExcel አውርድ</button>
+        <button onclick="logout()" class="mt-6 w-full py-2 bg-gray-800 text-white rounded-lg">ውጣ</button>
+    </div>
+
+    <footer class="mt-auto p-6 text-center">
+        <hr class="border-pink-400 mb-2">
+        <p class="text-gray-800 font-bold">Created by: <span class="bg-gray-800 text-pink-200 px-3 py-1 rounded-full text-sm">Alex Getachew</span></p>
+    </footer>
+
+    <script>
+        const passCodes = {
+            dispatcher: "1111",
+            driver: "2222",
+            creator: "3333"
+        };
+
+        function checkLogin() {
+            const input = document.getElementById('mainPass').value;
+            document.getElementById('homePage').classList.add('hidden');
+
+            if (input === passCodes.dispatcher) {
+                document.getElementById('dispatcherPage').classList.remove('hidden');
+            } else if (input === passCodes.driver) {
+                document.getElementById('driverPage').classList.remove('hidden');
+            } else if (input === passCodes.creator) {
+                document.getElementById('creatorPage').classList.remove('hidden');
+            } else {
+                alert("የተሳሳተ ኮድ ነው!");
+                document.getElementById('homePage').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        function confirmCollection() {
+            const weight = document.getElementById('wasteWeight').value;
+            if(weight) {
+                alert(weight + " ኪ.ግ ቆሻሻ መነሳቱ ተመዝግቧል።");
+                logout();
+            } else {
+                alert("እባክዎ ክብደት ያስገቡ!");
+            }
+        }
+
+        function downloadExcel() {
+            // Sample data for Excel
+            const data = [
+                { ወረዳ: "ወረዳ 11", ሹፌር: "ካሳሁን", ክብደት_ኪግ: 450, ቀን: "2026-04-10" },
+                { ወረዳ: "ወረዳ 9", ሹፌር: "አበበ", ክብደት_ኪግ: 320, ቀን: "2026-04-10" }
+            ];
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Reports");
+            XLSX.writeFile(wb, "Yeka_Waste_Report.xlsx");
+        }
+    </script>
+</body>
+</html>
