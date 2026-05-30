@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>የካ ፅዳት | Central Cloud V10.0</title>
+    <title>የካ ፅዳት | Official Pink V9.6 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --pink: #ff007f; --dark-pink: #2d0016; --bg: #0d0006; }
+        :root { --pink: #ff007f; --bg: #0d0006; }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; overflow-x: hidden; }
         .pink-neon { color: var(--pink); text-shadow: 0 0 10px var(--pink), 0 0 20px var(--pink); }
         .glass-pink { background: rgba(45, 0, 22, 0.85); border: 2px solid var(--pink); border-radius: 20px; box-shadow: 0 0 20px rgba(255, 0, 127, 0.2); }
         .btn-pink { background: var(--pink); color: #000; font-weight: 900; border-radius: 12px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-pink:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-pink:active { transform: scale(0.95); }
         .input-pink { background: rgba(255, 0, 127, 0.05); border: 1px solid var(--pink); color: #fff; padding: 12px; border-radius: 10px; width: 100%; outline: none; }
-        .bar-v { width: 35px; border-radius: 6px 6px 0 0; transition: height 0.8s ease-out; }
         #reader { width: 100% !important; border: none !important; border-radius: 15px; overflow: hidden; }
     </style>
 </head>
@@ -29,172 +27,108 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // የካ ማዕከላዊ ሰርቨር ትስስር - የተስተካከለ
-        const SUPABASE_URL = 'https://znnvzvtrocszpjzwafkv.supabase.co';
-        const SUPABASE_KEY = 'Sb_publishable_IChi3eWHpYb8ildawK2azg_L6APoRwD';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { useState, useEffect } = React;
 
         const App = () => {
             const [view, setView] = useState('landing');
-            const [complaints, setComplaints] = useState([]);
-            const [keys, setKeys] = useState(() => JSON.parse(localStorage.getItem('yeka_v10_keys')) || { citizen: '0000', admin: '1111', creator: '2222' });
-            const [ui, setUi] = useState({ scanning: false, hasPhoto: false, hasGps: false });
-            const [searchPhone, setSearchPhone] = useState('');
-            const [foundReports, setFoundReports] = useState([]);
-            const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+            const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem('yeka_v9_db')) || []);
+            const [keys] = useState({ admin: '1111', creator: '2222' });
+            const [ui, setUi] = useState({ scanning: false });
 
-            const weredas = ["ወረዳ 01", "ወረዳ 02", "ወረዳ 03", "ወረዳ 04", "ወረዳ 05", "ወረዳ 06", "ወረዳ 07", "ወረዳ 08", "ወረዳ 09", "ወረዳ 10", "ወረዳ 11", "ወረዳ 12"];
-
-            useEffect(() => {
-                fetchComplaints();
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('access') === 'admin') setView('admin');
-            }, []);
-
-            useEffect(() => { localStorage.setItem('yeka_v10_keys', JSON.stringify(keys)); }, [keys]);
-
-            const fetchComplaints = async () => {
-                const { data, error } = await supabaseClient.from('complaints').select('*').order('id', { ascending: false });
-                if (!error && data) setComplaints(data);
-            };
-
-            const handleLogin = (code, role) => {
-                if (code === keys[role]) setView(role);
-                else alert("የተሳሳተ ኮድ!");
-            };
+            useEffect(() => { localStorage.setItem('yeka_v9_db', JSON.stringify(complaints)); }, [complaints]);
 
             const startScan = () => {
-                setUi({...ui, scanning: true});
+                setUi({ scanning: true });
                 setTimeout(() => {
                     const scanner = new Html5Qrcode("reader");
                     scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
-                    () => { scanner.stop(); setUi({...ui, scanning: false}); setView('citizen'); }, 
+                    () => { scanner.stop(); setUi({ scanning: false }); setView('citizen'); }, 
                     () => {}).catch(() => alert("ካሜራ መክፈት አልተቻለም"));
                 }, 300);
             };
 
-            const handleFileScan = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                new Html5Qrcode("hidden-reader").scanFile(file, true)
-                    .then(() => setView('citizen'))
-                    .catch(() => alert("QR ኮድ አልተገኘም!"));
-            };
-
-            const submitForm = async (e) => {
+            const submitForm = (e) => {
                 e.preventDefault();
                 const data = Object.fromEntries(new FormData(e.target).entries());
-                const report = { 
-                    id: Date.now(), 
-                    name: data.name,
-                    phone: data.phone,
-                    wereda: data.wereda,
-                    type: data.type,
-                    priority: data.priority,
-                    status: 'New', 
-                    satisfaction: null, 
-                    time: new Date().toLocaleString() 
-                };
-
-                const { error } = await supabaseClient.from('complaints').insert([report]);
-                if (error) {
-                    alert("የሰርቨር ስህተት አጋጥሟል! እባክዎ መጀመሪያ በሰርቨሩ ላይ ሰንጠረዡ መፈጠሩን ያረጋግጡ።");
-                } else {
-                    audioRef.current.play();
-                    alert("ቅሬታዎ በማዕከላዊ ሰርቨር ላይ ተመዝግቧል!");
-                    fetchComplaints();
-                    setView('landing');
-                    setUi({ scanning: false, hasPhoto: false, hasGps: false });
-                }
-            };
-
-            const updateStatus = async (id, newStatus) => {
-                const { error } = await supabaseClient.from('complaints').update({ status: newStatus }).eq('id', id);
-                if (!error) {
-                    setComplaints(complaints.map(i => i.id === id ? {...i, status: newStatus} : i));
-                }
-            };
-
-            const submitSatisfaction = async (id, rate) => {
-                const { error } = await supabaseClient.from('complaints').update({ satisfaction: rate }).eq('id', id);
-                if (!error) {
-                    setComplaints(complaints.map(i => i.id === id ? {...i, satisfaction: rate} : i));
-                    setFoundReports(foundReports.map(i => i.id === id ? {...i, satisfaction: rate} : i));
-                }
-            };
-
-            const deleteComplaint = async (id) => {
-                const { error } = await supabaseClient.from('complaints').delete().eq('id', id);
-                if (!error) setComplaints(complaints.filter(i => i.id !== id));
+                setComplaints([{ ...data, id: Date.now(), status: 'አዲስ', time: new Date().toLocaleString() }, ...complaints]);
+                alert("ቅሬታዎ ተመዝግቧል!");
+                setView('landing');
             };
 
             const downloadExcel = () => {
                 const ws = XLSX.utils.json_to_sheet(complaints);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Yeka_Cloud_Data");
-                const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const url = window.URL.createObjectURL(data);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = "Yeka_Central_Report.xlsx";
-                link.click();
-            };
-
-            const updatePasscode = (role, newCode) => {
-                if(newCode.length < 4) return alert("ኮዱ ቢያንስ 4 ቁጥር መሆን አለበት!");
-                setKeys({...keys, [role]: newCode});
-                alert(`${role} ኮድ ተቀይሯል!`);
+                XLSX.utils.book_append_sheet(wb, ws, "Reports");
+                XLSX.writeFile(wb, "Yeka_Cleansing_Data.xlsx");
             };
 
             return (
-                <div className="min-h-screen max-w-md mx-auto flex flex-col relative border-x border-pink-900/30 shadow-2xl">
-                    <header className="p-4 glass-pink m-2 flex justify-between items-center sticky top-0 z-50">
-                        <div className="flex items-center gap-2">
-                            <i className="fas fa-cloud pink-neon text-2xl animate-pulse"></i>
-                            <h1 className="text-sm font-black pink-neon uppercase tracking-tighter">የካ ፅዳት - ክላውድ</h1>
-                        </div>
-                        <button onClick={() => { fetchComplaints(); setView('tracker'); }} className="text-[10px] font-black bg-white/10 px-3 py-2 rounded-lg border border-pink-500 uppercase shadow-lg">ክትትል</button>
-                    </header>
-
-                    <main className="flex-1 p-4 overflow-y-auto pb-20">
-                        <div id="hidden-reader" className="hidden"></div>
-                        {view === 'landing' && !ui.scanning && (
-                            <div className="space-y-6 pt-6 animate-in fade-in duration-500">
-                                <div className="text-center">
-                                    <div className="w-24 h-24 bg-[#ff007f] rounded-[35px] mx-auto flex items-center justify-center shadow-[0_0_35px_#ff007f] mb-4">
-                                        <i className="fas fa-server text-4xl text-black"></i>
-                                    </div>
-                                    <h2 className="text-3xl font-black italic">የየካ ፅዳት አስተዳደር</h2>
-                                </div>
-                                <div className="glass-pink p-6 text-center shadow-lg border-b-4 border-b-[#ff007f]">
-                                    <p className="text-[10px] font-black uppercase opacity-60 mb-4 tracking-[4px]">QR SCAN</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button onClick={startScan} className="btn-pink py-4 text-[10px] uppercase flex flex-col items-center gap-1">
-                                            <i className="fas fa-camera text-lg"></i> ካሜራ
-                                        </button>
-                                        <label className="bg-white/5 border border-pink-500/30 rounded-xl flex flex-col items-center justify-center py-4 cursor-pointer">
-                                            <i className="fas fa-image text-lg text-[#ff007f]"></i>
-                                            <span className="text-[10px] font-black uppercase mt-1">ጋላሪ</span>
-                                            <input type="file" accept="image/*" className="hidden" onChange={handleFileScan} />
-                                        </label>
-                                    </div>
-                                </div>
-                                {['citizen', 'admin', 'creator'].map(role => (
-                                    <div key={role} className="glass-pink p-4 flex flex-col gap-2">
-                                        <p className="text-[9px] font-black uppercase opacity-40">{role === 'citizen' ? 'ቅሬታ አቅራቢ' : role} ACCESS</p>
-                                        <div className="flex gap-2">
-                                            <input type="password" placeholder="Passcode" className="input-pink text-xs" onKeyDown={(e) => e.key === 'Enter' && handleLogin(e.target.value, role)} />
-                                            <button onClick={(e) => handleLogin(e.target.previousSibling.value, role)} className="btn-pink px-5 py-2 text-[10px] uppercase">GO</button>
-                                        </div>
-                                    </div>
-                                ))}
+                <div className="max-w-md mx-auto p-4 min-h-screen">
+                    {/* Landing Page */}
+                    {view === 'landing' && (
+                        <div className="space-y-6 pt-10">
+                            <h1 className="text-3xl font-black text-center pink-neon">የካ ፅዳት ማዕከል</h1>
+                            
+                            <div className="glass-pink p-6 text-center">
+                                <p className="mb-4 text-[10px] font-black uppercase tracking-widest">ቅሬታ ለማቅረብ ስካን ያድርጉ</p>
+                                <button onClick={startScan} className="btn-pink w-full py-5 uppercase font-black text-sm">QR ኮድ ስካነር</button>
                             </div>
-                        )}
-                        {/* ተጨማሪ ክፍሎች እንደነበሩ ይቆያሉ */}
-                    </main>
+
+                            <div className="flex gap-4">
+                                <button onClick={() => setView('admin_login')} className="flex-1 bg-white/5 border border-pink-500 p-4 rounded-xl text-[10px] font-black uppercase">አስተዳደር</button>
+                                <button onClick={() => setView('creator_login')} className="flex-1 bg-white/5 border border-pink-500 p-4 rounded-xl text-[10px] font-black uppercase">ፈጣሪ</button>
+                            </div>
+
+                            {ui.scanning && <div id="reader" className="mt-4"></div>}
+                        </div>
+                    )}
+
+                    {/* Citizen Form */}
+                    {view === 'citizen' && (
+                        <form onSubmit={submitForm} className="glass-pink p-6 space-y-4">
+                            <h2 className="text-xl font-black text-center pink-neon uppercase">አዲስ ቅሬታ</h2>
+                            <input name="name" placeholder="ሙሉ ስም" required className="input-pink" />
+                            <input name="phone" placeholder="ስልክ ቁጥር" required className="input-pink" />
+                            <button type="submit" className="btn-pink w-full py-4 uppercase font-black">ሪፖርት ላክ</button>
+                            <button onClick={() => setView('landing')} className="w-full text-[10px] opacity-40 uppercase">ተመለስ</button>
+                        </form>
+                    )}
+
+                    {/* Admin & Creator Dashboards */}
+                    {(view === 'admin_dashboard' || view === 'creator_dashboard') && (
+                        <div className="space-y-4 pt-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-black text-center pink-neon uppercase">{view === 'admin_dashboard' ? 'አስተዳደር' : 'ፈጣሪ'}</h2>
+                                <button onClick={downloadExcel} className="text-[9px] bg-green-600 px-2 py-1 rounded font-black">Excel</button>
+                            </div>
+                            {complaints.map(c => (
+                                <div key={c.id} className="glass-pink p-4 flex justify-between items-center">
+                                    <div>
+                                        <p className="font-bold text-sm">{c.name}</p>
+                                        <p className="text-[10px] text-pink-500">{c.status}</p>
+                                    </div>
+                                    {view === 'creator_dashboard' && (
+                                        <button onClick={() => setComplaints(complaints.filter(i => i.id !== c.id))} className="text-red-500 text-xs font-black">አጥፋ</button>
+                                    )}
+                                </div>
+                            ))}
+                            <button onClick={() => setView('landing')} className="btn-pink w-full py-3 uppercase font-black">Logout</button>
+                        </div>
+                    )}
+
+                    {/* Login Forms */}
+                    {(view === 'admin_login' || view === 'creator_login') && (
+                        <div className="glass-pink p-6 mt-10">
+                            <input type="password" id="pass" placeholder="ኮድ ያስገቡ" className="input-pink mb-4 text-center font-black" />
+                            <button onClick={() => {
+                                const pass = document.getElementById('pass').value;
+                                if(view === 'admin_login' && pass === keys.admin) setView('admin_dashboard');
+                                else if(view === 'creator_login' && pass === keys.creator) setView('creator_dashboard');
+                                else alert("የተሳሳተ ኮድ!");
+                            }} className="btn-pink w-full py-4 uppercase font-black">ግባ</button>
+                            <button onClick={() => setView('landing')} className="w-full mt-4 text-[10px] opacity-40 uppercase">ተመለስ</button>
+                        </div>
+                    )}
                 </div>
             );
         };
